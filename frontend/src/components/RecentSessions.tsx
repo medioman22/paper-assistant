@@ -27,7 +27,10 @@ export function RecentSessions({ sessions, onResume, onDeleted }: Props) {
         {sessions.map((s) => (
           <div key={s.session_id} className="session-card" onClick={() => onResume(s.session_id)}>
             <div className="session-info">
-              <span className="session-title">{s.title}</span>
+              <span className="session-title">
+                {s.session_number > 1 && <span className="session-num">({s.session_number})</span>}
+                {s.title}
+              </span>
               <span className="session-date">{fmt(s.created_at)}</span>
             </div>
             <button
@@ -55,7 +58,7 @@ export function DuplicateBanner({ duplicates, onResume, onDismiss }: DuplicateBa
       <div className="duplicate-actions">
         {duplicates.map((s) => (
           <button key={s.session_id} className="btn-primary" onClick={() => onResume(s.session_id)}>
-            Open {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            {s.session_number > 1 ? `Open (${s.session_number})` : "Open"} · {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </button>
         ))}
         <button className="btn-ghost" onClick={onDismiss}>Start fresh</button>

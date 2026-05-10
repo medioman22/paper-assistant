@@ -52,9 +52,12 @@ def find_by_hash(h: str) -> list[dict]:
 
 
 def create(session_id: str, paper_hash: str, summary: dict, paper_text: str, pdf_path: str | None = None) -> dict:
+    existing = find_by_hash(paper_hash)
+    session_number = max((s.get("session_number", 1) for s in existing), default=0) + 1
     record = {
         "session_id": session_id,
         "paper_hash": paper_hash,
+        "session_number": session_number,
         "title": summary["title"],
         "abstract": summary["abstract"],
         "key_points": summary.get("key_points", []),

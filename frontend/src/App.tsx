@@ -5,7 +5,7 @@ import { IllustrationPanel } from "./components/IllustrationPanel";
 import { ImageGallery } from "./components/ImageGallery";
 import { ChatPanel } from "./components/ChatPanel";
 import { RecentSessions, DuplicateBanner } from "./components/RecentSessions";
-import { uploadPaper, fetchPresets, fetchSessions, resumeSession, generateIllustration } from "./hooks/useApi";
+import { uploadPaper, fetchPresets, fetchSessions, resumeSession, deleteSession, generateIllustration } from "./hooks/useApi";
 import { PaperSummary, Preset, IllustrationResult, AspectRatio, Resolution, SessionMeta } from "./types";
 import "./App.css";
 
@@ -60,6 +60,11 @@ export default function App() {
 
   async function handleResume(sid: string) {
     try {
+      // If there's a freshly created pending session and user chose to resume an old one, clean it up
+      if (pendingSummary && pendingSummary.sessionId !== sid) {
+        deleteSession(pendingSummary.sessionId).catch(() => {});
+        setRecentSessions((s) => s.filter((x) => x.session_id !== pendingSummary.sessionId));
+      }
       const resp = await resumeSession(sid);
       const chatMsgs: import("./types").ChatMessage[] = (resp.chat_history ?? []).flatMap((t) => [
         { role: "user" as const, text: t.question },

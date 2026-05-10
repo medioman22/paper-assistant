@@ -40,12 +40,14 @@ class SessionMeta(BaseModel):
     abstract: str
     created_at: str
     paper_hash: str
+    session_number: int = 1
 
 
 class UploadResponse(BaseModel):
     session_id: str
     summary: PaperSummary
     duplicate_sessions: list[SessionMeta] = []
+    is_new_session: bool = True
 
 
 # ── Prompt variants ───────────────────────────────────────────────────────────

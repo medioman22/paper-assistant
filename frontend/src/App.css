@@ -60,6 +60,7 @@ body {
   text-overflow: ellipsis;
 }
 .session-date { font-size: 0.75rem; color: var(--text-muted); }
+.session-num { color: var(--accent); margin-right: 0.35em; font-weight: 600; }
 .session-delete {
   background: none;
   border: none;

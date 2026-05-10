@@ -23,12 +23,14 @@ export interface SessionMeta {
   abstract: string;
   created_at: string;
   paper_hash: string;
+  session_number: number;
 }
 
 export interface UploadResponse {
   session_id: string;
   summary: PaperSummary;
   duplicate_sessions: SessionMeta[];
+  is_new_session: boolean;
 }
 
 export interface Preset {
