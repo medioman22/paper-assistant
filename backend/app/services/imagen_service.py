@@ -82,7 +82,7 @@ async def generate_illustration(
     dim_hint = _resolution_hint(resolution, aspect_ratio)
     prompt = f"{dim_hint}\n\n{body}"
 
-    response = client.models.generate_content(
+    response = await client.aio.models.generate_content(
         model=IMAGE_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(

@@ -1,8 +1,10 @@
 """
 Persistent session store.
 Keeps sessions in memory for fast access and mirrors them to disk.
+Writes are debounced (1 s) to avoid hammering disk on every chat turn.
 """
 import json
+import asyncio
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +16,8 @@ _DATA_DIR.mkdir(exist_ok=True)
 _PDF_DIR.mkdir(exist_ok=True)
 
 _sessions: dict[str, dict] = {}
+_dirty = False
+_flush_task: asyncio.Task | None = None
 
 _STRIP_KEYS = {"paper_text", "chat_history", "illustrations", "pdf_path"}
 
@@ -24,8 +28,27 @@ def _load() -> None:
             _sessions[s["session_id"]] = s
 
 
-def _save() -> None:
+def _write_now() -> None:
+    global _dirty
     _STORE_FILE.write_text(json.dumps(list(_sessions.values()), indent=2))
+    _dirty = False
+
+
+async def _flush_loop() -> None:
+    await asyncio.sleep(1)
+    _write_now()
+
+
+def _schedule_save() -> None:
+    global _dirty, _flush_task
+    _dirty = True
+    if _flush_task is None or _flush_task.done():
+        try:
+            loop = asyncio.get_running_loop()
+            _flush_task = loop.create_task(_flush_loop())
+        except RuntimeError:
+            # No running loop (e.g. during startup load) — write immediately
+            _write_now()
 
 
 _load()
@@ -71,7 +94,7 @@ def create(session_id: str, paper_hash: str, summary: dict, paper_text: str, pdf
         "pdf_path": pdf_path,
     }
     _sessions[session_id] = record
-    _save()
+    _schedule_save()
     return record
 
 
@@ -85,21 +108,21 @@ def list_all() -> list[dict]:
 
 def delete(session_id: str) -> None:
     _sessions.pop(session_id, None)
-    _save()
+    _schedule_save()
 
 
 def add_illustration(session_id: str, illustration: dict) -> None:
     s = _sessions.get(session_id)
     if s:
         s.setdefault("illustrations", []).append(illustration)
-        _save()
+        _schedule_save()
 
 
 def update_chat_history(session_id: str, history: list) -> None:
     s = _sessions.get(session_id)
     if s:
         s["chat_history"] = history
-        _save()
+        _schedule_save()
 
 
 def get_chat_history(session_id: str) -> list:

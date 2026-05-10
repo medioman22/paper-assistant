@@ -73,7 +73,7 @@ async def ask(session_id: str, question: str) -> ChatResponse:
 
     history_msgs.append({"role": "user", "parts": [{"text": question}]})
 
-    response = client.models.generate_content(
+    response = await client.aio.models.generate_content(
         model="gemini-2.0-flash",
         contents=history_msgs,
         config=types.GenerateContentConfig(

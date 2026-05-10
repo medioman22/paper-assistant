@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from google import genai
 from google.genai import types
 from ..models import PaperSummary
@@ -31,24 +32,20 @@ TEXT_EXTRACT_PROMPT = "Extract and return the full plain text of this PDF docume
 
 
 async def summarize_paper(pdf_bytes: bytes) -> tuple[PaperSummary, str]:
-    """Returns (summary, full_paper_text)."""
+    """Returns (summary, full_paper_text). Both Gemini calls run in parallel."""
     client = _get_client()
 
-    # Run both calls concurrently via the SDK's sync interface
-    # (FastAPI runs these sequentially in the async context; good enough for now)
-    summary_resp = client.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=[
-            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-            SUMMARY_PROMPT,
-        ],
-    )
-    text_resp = client.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=[
-            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-            TEXT_EXTRACT_PROMPT,
-        ],
+    pdf_part = types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf")
+
+    summary_resp, text_resp = await asyncio.gather(
+        client.aio.models.generate_content(
+            model=EXTRACT_MODEL,
+            contents=[pdf_part, SUMMARY_PROMPT],
+        ),
+        client.aio.models.generate_content(
+            model=EXTRACT_MODEL,
+            contents=[pdf_part, TEXT_EXTRACT_PROMPT],
+        ),
     )
 
     raw = summary_resp.text.strip()
