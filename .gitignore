@@ -1,0 +1,21 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/app/**/__pycache__/
+backend/app/services/__pycache__/
+backend/app/routers/__pycache__/
+*.pyc
+*.pyo
+
+# Secrets
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Data (sessions contain full paper text)
+backend/app/data/sessions.json
+
+# Build artifacts
+frontend/.tsbuildinfo
