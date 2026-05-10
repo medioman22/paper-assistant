@@ -85,7 +85,7 @@ export default function App() {
     "Style: clean line diagram, labeled components, minimal color, white background, schematic/blueprint aesthetic. " +
     "Concept to illustrate:\n{context}";
 
-  async function handleChatIllustrate(context: string) {
+  async function handleChatIllustrate(context: string): Promise<void> {
     const preset = "key_concept";
     const existing = illustrations.filter((r) => r.preset === preset);
     const iteration = existing.length === 0 ? 1 : Math.max(...existing.map((r) => r.iteration)) + 1;

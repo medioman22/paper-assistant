@@ -4,7 +4,7 @@ import { askQuestion } from "../hooks/useApi";
 
 interface Props {
   sessionId: string;
-  onIllustrate: (context: string) => void;
+  onIllustrate: (context: string) => Promise<void>;
 }
 
 function SourceList({ sources }: { sources: ChatSource[] }) {
@@ -34,6 +34,7 @@ export function ChatPanel({ sessionId, onIllustrate }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [illustratingIdx, setIllustratingIdx] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,8 +75,15 @@ export function ChatPanel({ sessionId, onIllustrate }: Props) {
               <div className="chat-actions">
                 {msg.sources && msg.sources.length > 0 && <SourceList sources={msg.sources} />}
                 {msg.context && (
-                  <button className="chat-action-btn illustrate-btn" onClick={() => onIllustrate(msg.context!)}>
-                    ✦ Illustrate
+                  <button
+                    className={`chat-action-btn illustrate-btn${illustratingIdx === i ? " loading" : ""}`}
+                    disabled={illustratingIdx !== null}
+                    onClick={async () => {
+                      setIllustratingIdx(i);
+                      try { await onIllustrate(msg.context!); } finally { setIllustratingIdx(null); }
+                    }}
+                  >
+                    {illustratingIdx === i ? <span className="chat-dots"><span /><span /><span /></span> : "✦ Illustrate"}
                   </button>
                 )}
               </div>
