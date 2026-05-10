@@ -5,9 +5,10 @@ import {
 
 const BASE = "";
 
-export async function uploadPaper(file: File): Promise<UploadResponse> {
+export async function uploadPaper(file: File, force = false): Promise<UploadResponse> {
   const form = new FormData();
   form.append("file", file);
+  form.append("force", String(force));
   const res = await fetch(`${BASE}/papers/upload`, { method: "POST", body: form });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from ..models import UploadResponse, PaperSummary, IllustrationResult
 from ..services import gemini_service, chat_service, session_store
 
@@ -49,7 +49,7 @@ async def delete_session(session_id: str):
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_paper(file: UploadFile = File(...)):
+async def upload_paper(file: UploadFile = File(...), force: bool = Form(False)):
     if not file.filename or not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
@@ -59,6 +59,15 @@ async def upload_paper(file: UploadFile = File(...)):
 
     h = session_store.pdf_hash(pdf_bytes)
     duplicates = [session_store.public_meta(s) for s in session_store.find_by_hash(h)]
+
+    # Return duplicates immediately without processing — let the user decide first
+    if duplicates and not force:
+        return UploadResponse(
+            session_id="",
+            summary=PaperSummary(title="", abstract="", key_points=[], methodology="", findings="", raw_text_excerpt=""),
+            duplicate_sessions=duplicates,
+            is_new_session=False,
+        )
 
     try:
         summary, paper_text = await gemini_service.summarize_paper(pdf_bytes)
@@ -70,4 +79,4 @@ async def upload_paper(file: UploadFile = File(...)):
     chat_service.create_session(session_id, paper_text)
     session_store.create(session_id, h, summary.model_dump(), paper_text, pdf_path)
 
-    return UploadResponse(session_id=session_id, summary=summary, duplicate_sessions=duplicates)
+    return UploadResponse(session_id=session_id, summary=summary, duplicate_sessions=duplicates, is_new_session=True)

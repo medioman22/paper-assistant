@@ -21,27 +21,26 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [recentSessions, setRecentSessions] = useState<SessionMeta[]>([]);
   const [duplicates, setDuplicates] = useState<SessionMeta[]>([]);
-  const [pendingSummary, setPendingSummary] = useState<{ sessionId: string; summary: PaperSummary } | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchPresets().then(setPresets).catch(() => {}); }, []);
   useEffect(() => { fetchSessions().then(setRecentSessions).catch(() => {}); }, []);
 
-  async function handleUpload(file: File) {
+  async function handleUpload(file: File, force = false) {
     setUploading(true);
     setError(null);
     setDuplicates([]);
-    setPendingSummary(null);
     try {
-      const resp = await uploadPaper(file);
-      if (resp.duplicate_sessions.length > 0) {
-        // Hold off opening — let user choose to resume or start fresh
+      const resp = await uploadPaper(file, force);
+      if (resp.duplicate_sessions.length > 0 && !resp.is_new_session) {
+        // Duplicates found, no processing done yet — let user decide
         setDuplicates(resp.duplicate_sessions);
-        setPendingSummary({ sessionId: resp.session_id, summary: resp.summary });
+        setPendingFile(file);
       } else {
         openSession(resp.session_id, resp.summary);
+        setRecentSessions(await fetchSessions());
       }
-      setRecentSessions(await fetchSessions());
     } catch (err) {
       setError(String(err));
     } finally {
@@ -55,16 +54,11 @@ export default function App() {
     setIllustrations(savedIllustrations);
     setInitialChatMessages(chatMsgs);
     setDuplicates([]);
-    setPendingSummary(null);
+    setPendingFile(null);
   }
 
   async function handleResume(sid: string) {
     try {
-      // If there's a freshly created pending session and user chose to resume an old one, clean it up
-      if (pendingSummary && pendingSummary.sessionId !== sid) {
-        deleteSession(pendingSummary.sessionId).catch(() => {});
-        setRecentSessions((s) => s.filter((x) => x.session_id !== pendingSummary.sessionId));
-      }
       const resp = await resumeSession(sid);
       const chatMsgs: import("./types").ChatMessage[] = (resp.chat_history ?? []).flatMap((t) => [
         { role: "user" as const, text: t.question },
@@ -76,8 +70,8 @@ export default function App() {
     }
   }
 
-  function handleStartFresh() {
-    if (pendingSummary) openSession(pendingSummary.sessionId, pendingSummary.summary);
+  async function handleStartFresh() {
+    if (pendingFile) await handleUpload(pendingFile, true);
   }
 
   function paperContext(): string {
@@ -141,7 +135,7 @@ export default function App() {
         ) : (
           <>
             <div className="top-bar">
-              <button className="reset-btn" onClick={() => { setSummary(null); setSessionId(null); setIllustrations([]); setInitialChatMessages([]); }}>
+              <button className="reset-btn" onClick={() => { setSummary(null); setSessionId(null); setIllustrations([]); setInitialChatMessages([]); setPendingFile(null); }}>
                 ← Papers
               </button>
             </div>
