@@ -14,8 +14,9 @@ backend/.env
 frontend/node_modules/
 frontend/dist/
 
-# Data (sessions contain full paper text)
+# Data (sessions contain full paper text, pdfs are user uploads)
 backend/app/data/sessions.json
+backend/app/data/pdfs/
 
 # Build artifacts
 frontend/.tsbuildinfo
