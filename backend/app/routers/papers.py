@@ -54,8 +54,8 @@ async def upload_paper(file: UploadFile = File(...), force: bool = Form(False)):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
     pdf_bytes = await file.read()
-    if len(pdf_bytes) > 20 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File too large (max 20 MB).")
+    if len(pdf_bytes) > 100 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large (max 100 MB).")
 
     h = session_store.pdf_hash(pdf_bytes)
     duplicates = [session_store.public_meta(s) for s in session_store.find_by_hash(h)]
