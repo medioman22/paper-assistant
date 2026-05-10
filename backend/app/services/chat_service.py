@@ -92,7 +92,12 @@ async def ask(session_id: str, question: str) -> ChatResponse:
     sources = [ChatSource(**s) for s in data.get("sources", [])]
     answer = data.get("answer", "")
 
-    session["history"].append({"question": question, "raw_answer": raw})
+    session["history"].append({
+        "question": question,
+        "raw_answer": raw,
+        "answer": answer,
+        "sources": [s.model_dump() for s in sources],
+    })
     session_store.update_chat_history(session_id, session["history"])
 
     return ChatResponse(answer=answer, sources=sources)

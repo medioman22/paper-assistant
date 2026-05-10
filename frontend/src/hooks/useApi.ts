@@ -43,7 +43,7 @@ export async function fetchSessions(): Promise<SessionMeta[]> {
   return res.json();
 }
 
-export async function resumeSession(sessionId: string): Promise<{ session_id: string; summary: PaperSummary; created_at: string; illustrations: IllustrationResult[] }> {
+export async function resumeSession(sessionId: string): Promise<{ session_id: string; summary: PaperSummary; created_at: string; illustrations: IllustrationResult[]; chat_history: { question: string; answer: string; sources: ChatMessage["sources"] }[] }> {
   const res = await fetch(`${BASE}/papers/sessions/${sessionId}`);
   if (!res.ok) throw new Error("Session not found");
   return res.json();

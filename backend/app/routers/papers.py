@@ -30,11 +30,16 @@ async def get_session(session_id: str):
     if not chat_service.get_session(session_id):
         chat_service.create_session(session_id, s["paper_text"])
     illustrations = [IllustrationResult(**i) for i in s.get("illustrations", [])]
+    chat_history = [
+        {"question": t["question"], "answer": t.get("answer", ""), "sources": t.get("sources", [])}
+        for t in s.get("chat_history", [])
+    ]
     return {
         "session_id": s["session_id"],
         "summary": _summary_from_record(s),
         "created_at": s["created_at"],
         "illustrations": [i.model_dump() for i in illustrations],
+        "chat_history": chat_history,
     }
 
 

@@ -4,6 +4,7 @@ import { askQuestion } from "../hooks/useApi";
 
 interface Props {
   sessionId: string;
+  initialMessages?: ChatMessage[];
   onIllustrate: (context: string) => Promise<void>;
 }
 
@@ -30,8 +31,8 @@ function SourceList({ sources }: { sources: ChatSource[] }) {
   );
 }
 
-export function ChatPanel({ sessionId, onIllustrate }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export function ChatPanel({ sessionId, initialMessages, onIllustrate }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [illustratingIdx, setIllustratingIdx] = useState<number | null>(null);

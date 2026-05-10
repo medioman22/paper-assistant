@@ -14,6 +14,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [illustrations, setIllustrations] = useState<IllustrationResult[]>([]);
+  const [initialChatMessages, setInitialChatMessages] = useState<import("./types").ChatMessage[]>([]);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("1:1");
   const [resolution, setResolution] = useState<Resolution>("2048");
   const [uploading, setUploading] = useState(false);
@@ -48,10 +49,11 @@ export default function App() {
     }
   }
 
-  function openSession(sid: string, s: PaperSummary, savedIllustrations: IllustrationResult[] = []) {
+  function openSession(sid: string, s: PaperSummary, savedIllustrations: IllustrationResult[] = [], chatMsgs: import("./types").ChatMessage[] = []) {
     setSummary(s);
     setSessionId(sid);
     setIllustrations(savedIllustrations);
+    setInitialChatMessages(chatMsgs);
     setDuplicates([]);
     setPendingSummary(null);
   }
@@ -59,7 +61,11 @@ export default function App() {
   async function handleResume(sid: string) {
     try {
       const resp = await resumeSession(sid);
-      openSession(resp.session_id, resp.summary, resp.illustrations ?? []);
+      const chatMsgs: import("./types").ChatMessage[] = (resp.chat_history ?? []).flatMap((t) => [
+        { role: "user" as const, text: t.question },
+        { role: "assistant" as const, text: t.answer, sources: t.sources, context: t.answer },
+      ]);
+      openSession(resp.session_id, resp.summary, resp.illustrations ?? [], chatMsgs);
     } catch (err) {
       setError(String(err));
     }
@@ -130,7 +136,7 @@ export default function App() {
         ) : (
           <>
             <div className="top-bar">
-              <button className="reset-btn" onClick={() => { setSummary(null); setSessionId(null); setIllustrations([]); }}>
+              <button className="reset-btn" onClick={() => { setSummary(null); setSessionId(null); setIllustrations([]); setInitialChatMessages([]); }}>
                 ← Papers
               </button>
             </div>
@@ -141,6 +147,7 @@ export default function App() {
                 {sessionId && (
                   <ChatPanel
                     sessionId={sessionId}
+                    initialMessages={initialChatMessages}
                     onIllustrate={handleChatIllustrate}
                   />
                 )}
