@@ -48,10 +48,10 @@ export default function App() {
     }
   }
 
-  function openSession(sid: string, s: PaperSummary) {
+  function openSession(sid: string, s: PaperSummary, savedIllustrations: IllustrationResult[] = []) {
     setSummary(s);
     setSessionId(sid);
-    setIllustrations([]);
+    setIllustrations(savedIllustrations);
     setDuplicates([]);
     setPendingSummary(null);
   }
@@ -59,7 +59,7 @@ export default function App() {
   async function handleResume(sid: string) {
     try {
       const resp = await resumeSession(sid);
-      openSession(resp.session_id, resp.summary);
+      openSession(resp.session_id, resp.summary, resp.illustrations ?? []);
     } catch (err) {
       setError(String(err));
     }
@@ -94,6 +94,7 @@ export default function App() {
         preset, paper_context: context,
         aspect_ratio: aspectRatio, resolution, iteration,
         custom_template: SCHEME_TEMPLATE,
+        session_id: sessionId ?? undefined,
       });
       handleNewResult(result);
     } catch { /* swallow */ }
@@ -152,6 +153,7 @@ export default function App() {
                   illustrations={illustrations}
                   aspectRatio={aspectRatio}
                   resolution={resolution}
+                  sessionId={sessionId ?? undefined}
                   onAspectRatioChange={setAspectRatio}
                   onResolutionChange={setResolution}
                   onNewResult={handleNewResult}

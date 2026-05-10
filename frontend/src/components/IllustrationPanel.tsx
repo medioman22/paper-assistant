@@ -17,6 +17,7 @@ interface Props {
   illustrations: IllustrationResult[];
   aspectRatio: AspectRatio;
   resolution: Resolution;
+  sessionId?: string;
   onAspectRatioChange: (v: AspectRatio) => void;
   onResolutionChange: (v: Resolution) => void;
   onNewResult: (r: IllustrationResult) => void;
@@ -32,7 +33,7 @@ interface Editor {
 
 export function IllustrationPanel({
   presets, paperContext, illustrations,
-  aspectRatio, resolution,
+  aspectRatio, resolution, sessionId,
   onAspectRatioChange, onResolutionChange,
   onNewResult,
 }: Props) {
@@ -66,6 +67,7 @@ export function IllustrationPanel({
         resolution,
         iteration: nextIteration(preset),
         variant_id: variantId,
+        session_id: sessionId,
       });
       onNewResult(result);
     } catch (err) {

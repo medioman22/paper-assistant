@@ -64,6 +64,7 @@ export interface GenerateRequest {
   iteration: number;
   variant_id?: string;
   custom_template?: string;
+  session_id?: string;
 }
 
 export interface ChatSource {

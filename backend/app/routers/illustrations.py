@@ -5,7 +5,7 @@ from ..models import (
     IllustrationRequest, IllustrationResult,
     PRESET_LABELS, PromptVariant, PromptVariantCreate,
 )
-from ..services import imagen_service
+from ..services import imagen_service, session_store
 
 router = APIRouter(prefix="/illustrations", tags=["illustrations"])
 
@@ -100,4 +100,8 @@ async def generate_illustration(body: IllustrationRequest):
         raise HTTPException(status_code=502, detail=f"Image generation failed: {exc}") from exc
 
     result.variant_name = variant_name
+
+    if body.session_id:
+        session_store.add_illustration(body.session_id, result.model_dump())
+
     return result

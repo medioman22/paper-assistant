@@ -3,6 +3,7 @@ import json
 from google import genai
 from google.genai import types
 from ..models import ChatResponse, ChatSource
+from . import session_store
 
 _client: genai.Client | None = None
 
@@ -18,7 +19,8 @@ def _get_client() -> genai.Client:
 
 
 def create_session(session_id: str, paper_text: str) -> None:
-    _sessions[session_id] = {"paper_text": paper_text, "history": []}
+    history = session_store.get_chat_history(session_id)
+    _sessions[session_id] = {"paper_text": paper_text, "history": history}
 
 
 def get_session(session_id: str) -> dict | None:
@@ -86,5 +88,6 @@ async def ask(session_id: str, question: str) -> ChatResponse:
     answer = data.get("answer", "")
 
     session["history"].append({"question": question, "raw_answer": raw})
+    session_store.update_chat_history(session_id, session["history"])
 
     return ChatResponse(answer=answer, sources=sources)

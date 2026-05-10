@@ -71,8 +71,9 @@ class IllustrationRequest(BaseModel):
     aspect_ratio: AspectRatio = "1:1"
     resolution: Resolution = "2048"
     iteration: int = 1
-    variant_id: str | None = None       # use a saved variant; overrides default template
-    custom_template: str | None = None  # one-off override (e.g. from chat)
+    variant_id: str | None = None
+    custom_template: str | None = None
+    session_id: str | None = None
 
 
 class IllustrationResult(BaseModel):
