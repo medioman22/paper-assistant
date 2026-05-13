@@ -23,12 +23,15 @@ Include a mix of:
 - Subsequent work building on similar ideas
 
 Rules:
-- Only suggest papers you are highly confident actually exist with these exact details.
-- Provide a real URL (arXiv, DOI, Semantic Scholar, ACM DL, IEEE Xplore — whichever is most stable).
+- Only suggest papers you are highly confident actually exist.
+- Use Google Search to verify each paper exists and find its real URL (prefer arXiv, DOI, or publisher page).
+- If you cannot confirm a paper exists via search, skip it and suggest a different one you can verify.
 - Keep takeaway to one sentence explaining relevance to the paper above.
 
 Return ONLY a valid JSON array, no markdown. Each element must have these keys:
-  title, authors, year, venue, relationship, takeaway, url
+  title, authors, year, relationship, takeaway, url
+
+Set url to null if you cannot find a verified link.
 
 --- PAPER ---
 Title: {title}
@@ -86,6 +89,18 @@ async def get_recommendations(title: str, abstract: str, key_points: list[str],
     response = await client.aio.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.2),
+        config=types.GenerateContentConfig(
+            temperature=0.2,
+            tools=[types.Tool(google_search=types.GoogleSearch())],
+        ),
     )
-    return parse_recommendations(response.text)
+    recs = parse_recommendations(response.text)
+
+    # Normalise: ensure every entry has expected keys
+    for rec in recs:
+        rec.setdefault("url", None)
+        rec.setdefault("pdf_url", None)
+        rec.setdefault("semantic_scholar_id", None)
+        rec.setdefault("venue", None)
+
+    return recs

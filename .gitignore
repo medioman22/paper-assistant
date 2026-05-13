@@ -17,6 +17,8 @@ frontend/dist/
 # Data (sessions contain full paper text, pdfs are user uploads)
 backend/app/data/sessions.json
 backend/app/data/pdfs/
+backend/app/data/literature_graph.json
+backend/app/data/prompt_variants.json
 
 # Build artifacts
 frontend/.tsbuildinfo
