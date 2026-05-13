@@ -79,5 +79,42 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   sources?: ChatSource[];
-  context?: string;  // for illustrate action
+  context?: string;
+}
+
+export type RelationshipType = "cited" | "foundational" | "parallel" | "subsequent" | "related";
+
+export interface PaperRecommendation {
+  node_id: string;
+  title: string;
+  authors: string;
+  year: string | number;
+  venue: string;
+  relationship: RelationshipType;
+  takeaway: string;
+  url: string;
+  session_id?: string | null;
+}
+
+export interface GraphNode {
+  id: string;
+  title: string;
+  authors?: string;
+  year?: string;
+  venue?: string;
+  takeaway?: string;
+  url?: string;
+  session_id?: string | null;
+}
+
+export interface GraphEdge {
+  id: string;
+  source: string;
+  target: string;
+  relationship: RelationshipType;
+}
+
+export interface LiteratureGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 }

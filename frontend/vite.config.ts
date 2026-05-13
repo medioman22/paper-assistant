@@ -9,6 +9,7 @@ export default defineConfig({
       "/papers": "http://localhost:8000",
       "/illustrations": "http://localhost:8000",
       "/chat": "http://localhost:8000",
+      "/literature": "http://localhost:8000",
       "/health": "http://localhost:8000",
     },
   },

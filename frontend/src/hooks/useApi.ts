@@ -1,6 +1,7 @@
 import {
   UploadResponse, Preset, IllustrationResult, GenerateRequest,
   PromptVariant, ChatMessage, PresetType, SessionMeta, PaperSummary,
+  PaperRecommendation, LiteratureGraph,
 } from "../types";
 
 const BASE = "";
@@ -103,6 +104,29 @@ export async function askQuestion(
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail ?? "Chat failed");
+  }
+  return res.json();
+}
+
+// ── Literature ────────────────────────────────────────────────────────────────
+
+export async function fetchLiteratureGraph(): Promise<LiteratureGraph> {
+  const res = await fetch(`${BASE}/literature/graph`);
+  if (!res.ok) throw new Error("Could not load literature graph");
+  return res.json();
+}
+
+export async function fetchRecommendations(sessionId: string): Promise<{ recommendations: PaperRecommendation[]; cached: boolean }> {
+  const res = await fetch(`${BASE}/literature/recommendations/${sessionId}`);
+  if (!res.ok) throw new Error("Could not load recommendations");
+  return res.json();
+}
+
+export async function generateRecommendations(sessionId: string): Promise<{ recommendations: PaperRecommendation[]; cached: boolean }> {
+  const res = await fetch(`${BASE}/literature/recommendations/${sessionId}`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Recommendation failed");
   }
   return res.json();
 }

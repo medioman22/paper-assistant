@@ -5,6 +5,8 @@ import { IllustrationPanel } from "./components/IllustrationPanel";
 import { ImageGallery } from "./components/ImageGallery";
 import { ChatPanel } from "./components/ChatPanel";
 import { RecentSessions, DuplicateBanner } from "./components/RecentSessions";
+import { RelatedPapers } from "./components/RelatedPapers";
+import { LiteratureMap } from "./components/LiteratureMap";
 import { uploadPaper, fetchPresets, fetchSessions, resumeSession, deleteSession, generateIllustration } from "./hooks/useApi";
 import { PaperSummary, Preset, IllustrationResult, AspectRatio, Resolution, SessionMeta } from "./types";
 import "./App.css";
@@ -22,6 +24,7 @@ export default function App() {
   const [recentSessions, setRecentSessions] = useState<SessionMeta[]>([]);
   const [duplicates, setDuplicates] = useState<SessionMeta[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showLitMap, setShowLitMap] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchPresets().then(setPresets).catch(() => {}); }, []);
@@ -34,7 +37,6 @@ export default function App() {
     try {
       const resp = await uploadPaper(file, force);
       if (resp.duplicate_sessions.length > 0 && !resp.is_new_session) {
-        // Duplicates found, no processing done yet — let user decide
         setDuplicates(resp.duplicate_sessions);
         setPendingFile(file);
       } else {
@@ -55,6 +57,7 @@ export default function App() {
     setInitialChatMessages(chatMsgs);
     setDuplicates([]);
     setPendingFile(null);
+    setShowLitMap(false);
   }
 
   async function handleResume(sid: string) {
@@ -112,7 +115,17 @@ export default function App() {
           <h1>Paper Assistant</h1>
           <p>Upload a research paper — get a summary, chat, and AI-generated illustrations</p>
         </div>
+        <button className="lit-map-btn" onClick={() => setShowLitMap(true)}>
+          ⬡ Literature Map
+        </button>
       </header>
+
+      {showLitMap && (
+        <LiteratureMap
+          onClose={() => setShowLitMap(false)}
+          onOpenSession={(sid) => { setShowLitMap(false); handleResume(sid); }}
+        />
+      )}
 
       <main className="app-main">
         {!summary ? (
@@ -143,6 +156,7 @@ export default function App() {
             <div className="content-grid">
               <div className="main-column">
                 <PaperSummaryPanel summary={summary} />
+                {sessionId && <RelatedPapers sessionId={sessionId} onOpenSession={handleResume} />}
                 {sessionId && (
                   <ChatPanel
                     sessionId={sessionId}
