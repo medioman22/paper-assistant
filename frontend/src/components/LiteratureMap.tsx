@@ -30,7 +30,13 @@ function PaperNodeComponent({ data }: NodeProps) {
       {!!d.takeaway && <div className="flow-node-takeaway">{String(d.takeaway)}</div>}
       <div className="flow-node-actions">
         {sessionId && onOpen && <button className="flow-node-btn" onClick={onOpen}>Open →</button>}
-        {!sessionId && url && <a className="flow-node-btn" href={url} target="_blank" rel="noreferrer">↗ Link</a>}
+        {!sessionId && url && (
+          <>
+            <a className="flow-node-btn" href={url} target="_blank" rel="noreferrer">↗ Link</a>
+            {" · "}
+            <button className="flow-node-btn" onClick={() => (d.onFetch as () => void)?.()}>⬇ Fetch</button>
+          </>
+        )}
       </div>
       <Handle type="source" position={Position.Bottom} />
     </div>
@@ -39,7 +45,7 @@ function PaperNodeComponent({ data }: NodeProps) {
 
 const nodeTypes = { paper: PaperNodeComponent };
 
-function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => void): { nodes: Node[]; edges: Edge[] } {
+function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => void, onFetchPaper: (url: string) => void): { nodes: Node[]; edges: Edge[] } {
   const HGAP = 340;
   const VGAP = 240;
   const localNodes = graphData.nodes.filter((n) => n.session_id);
@@ -68,6 +74,7 @@ function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => 
     data: {
       ...n,
       onOpen: n.session_id ? () => onOpenSession(n.session_id!) : undefined,
+      onFetch: !n.session_id && n.url ? () => onFetchPaper(n.url!) : undefined,
     },
   }));
 
@@ -87,20 +94,21 @@ function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => 
 interface Props {
   onClose: () => void;
   onOpenSession: (sessionId: string) => void;
+  onFetchPaper: (url: string) => void;
 }
 
-export function LiteratureMap({ onClose, onOpenSession }: Props) {
+export function LiteratureMap({ onClose, onOpenSession, onFetchPaper }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const load = useCallback(async () => {
     try {
       const graph = await fetchLiteratureGraph();
-      const { nodes: n, edges: e } = buildLayout(graph, onOpenSession);
+      const { nodes: n, edges: e } = buildLayout(graph, onOpenSession, onFetchPaper);
       setNodes(n);
       setEdges(e);
     } catch { /* empty graph is fine */ }
-  }, [onOpenSession, setNodes, setEdges]);
+  }, [onOpenSession, onFetchPaper, setNodes, setEdges]);
 
   useEffect(() => { load(); }, [load]);
 

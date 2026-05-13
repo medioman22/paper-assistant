@@ -130,3 +130,16 @@ export async function generateRecommendations(sessionId: string): Promise<{ reco
   }
   return res.json();
 }
+
+export async function fetchAndAnalyzePaper(url: string, force = false): Promise<UploadResponse> {
+  const res = await fetch(`${BASE}/papers/fetch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url, force }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Fetch failed");
+  }
+  return res.json();
+}

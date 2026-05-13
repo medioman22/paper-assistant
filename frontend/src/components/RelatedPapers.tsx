@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { PaperRecommendation, RelationshipType } from "../types";
-import { fetchRecommendations, generateRecommendations } from "../hooks/useApi";
+import { PaperRecommendation, RelationshipType, UploadResponse } from "../types";
+import { fetchRecommendations, generateRecommendations, fetchAndAnalyzePaper } from "../hooks/useApi";
 
 const REL_LABELS: Record<RelationshipType, string> = {
   cited: "Cited",
@@ -12,13 +12,15 @@ const REL_LABELS: Record<RelationshipType, string> = {
 
 interface Props {
   sessionId: string;
-  onOpenSession?: (sessionId: string) => void;
+  onOpenSession: (sessionId: string) => void;
+  onDuplicates: (resp: UploadResponse, url: string) => void;
 }
 
-export function RelatedPapers({ sessionId, onOpenSession }: Props) {
+export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props) {
   const [recs, setRecs] = useState<PaperRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchingUrl, setFetchingUrl] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
@@ -30,14 +32,31 @@ export function RelatedPapers({ sessionId, onOpenSession }: Props) {
 
   async function handleGenerate() {
     setLoading(true);
-    setError(null);
+    setErrors({});
     try {
       const r = await generateRecommendations(sessionId);
       setRecs(r.recommendations);
     } catch (e) {
-      setError(String(e));
+      setErrors({ _global: String(e) });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleFetch(url: string, force = false) {
+    setFetchingUrl(url);
+    setErrors((e) => ({ ...e, [url]: "" }));
+    try {
+      const resp = await fetchAndAnalyzePaper(url, force);
+      if (!resp.is_new_session && resp.duplicate_sessions.length > 0) {
+        onDuplicates(resp, url);
+      } else {
+        onOpenSession(resp.session_id);
+      }
+    } catch (e) {
+      setErrors((prev) => ({ ...prev, [url]: String(e) }));
+    } finally {
+      setFetchingUrl(null);
     }
   }
 
@@ -45,12 +64,12 @@ export function RelatedPapers({ sessionId, onOpenSession }: Props) {
     <div className="related-papers">
       <div className="related-header">
         <h3>Related Papers</h3>
-        <button className="btn-ghost small" onClick={handleGenerate} disabled={loading}>
+        <button className="btn-ghost small" onClick={handleGenerate} disabled={loading || fetchingUrl !== null}>
           {loading ? "Finding…" : recs.length > 0 ? "↺ Refresh" : "Find related papers"}
         </button>
       </div>
 
-      {error && <p className="related-error">{error}</p>}
+      {errors._global && <p className="related-error">{errors._global}</p>}
 
       {checked && recs.length === 0 && !loading && (
         <p className="related-empty">Click "Find related papers" to discover foundational and related work.</p>
@@ -70,11 +89,20 @@ export function RelatedPapers({ sessionId, onOpenSession }: Props) {
             </p>
             <p className="related-authors">{r.authors}</p>
             <p className="related-takeaway">{r.takeaway}</p>
-            {r.session_id && onOpenSession && (
-              <button className="btn-ghost small" onClick={() => onOpenSession(r.session_id!)}>
-                Open session →
-              </button>
-            )}
+            {errors[r.url] && <p className="related-error">{errors[r.url]}</p>}
+            <div className="related-card-actions">
+              {r.session_id
+                ? <button className="btn-ghost small" onClick={() => onOpenSession(r.session_id!)}>Open session →</button>
+                : r.url && (
+                  <button
+                    className="btn-ghost small fetch-btn"
+                    disabled={fetchingUrl !== null}
+                    onClick={() => handleFetch(r.url)}
+                  >
+                    {fetchingUrl === r.url ? "Downloading…" : "⬇ Fetch & Analyze"}
+                  </button>
+                )}
+            </div>
           </div>
         ))}
       </div>

@@ -1,7 +1,8 @@
 import uuid
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from pydantic import BaseModel
 from ..models import UploadResponse, PaperSummary, IllustrationResult
-from ..services import gemini_service, chat_service, session_store
+from ..services import gemini_service, chat_service, session_store, pdf_fetcher
 
 router = APIRouter(prefix="/papers", tags=["papers"])
 
@@ -57,10 +58,22 @@ async def upload_paper(file: UploadFile = File(...), force: bool = Form(False)):
     if len(pdf_bytes) > 100 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 100 MB).")
 
+    try:
+        return await _process_pdf(pdf_bytes, force)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Paper analysis failed: {exc}") from exc
+
+
+class FetchRequest(BaseModel):
+    url: str
+    force: bool = False
+
+
+async def _process_pdf(pdf_bytes: bytes, force: bool) -> UploadResponse:
+    """Shared logic for upload and fetch: dedup check, summarize, store."""
     h = session_store.pdf_hash(pdf_bytes)
     duplicates = [session_store.public_meta(s) for s in session_store.find_by_hash(h)]
 
-    # Return duplicates immediately without processing — let the user decide first
     if duplicates and not force:
         return UploadResponse(
             session_id="",
@@ -69,14 +82,28 @@ async def upload_paper(file: UploadFile = File(...), force: bool = Form(False)):
             is_new_session=False,
         )
 
-    try:
-        summary, paper_text = await gemini_service.summarize_paper(pdf_bytes)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Paper analysis failed: {exc}") from exc
-
+    summary, paper_text = await gemini_service.summarize_paper(pdf_bytes)
     pdf_path = session_store.save_pdf(h, pdf_bytes)
     session_id = str(uuid.uuid4())
     chat_service.create_session(session_id, paper_text)
     session_store.create(session_id, h, summary.model_dump(), paper_text, pdf_path)
-
     return UploadResponse(session_id=session_id, summary=summary, duplicate_sessions=duplicates, is_new_session=True)
+
+
+@router.post("/fetch", response_model=UploadResponse)
+async def fetch_paper(body: FetchRequest):
+    """Download a PDF from a URL (arXiv, DOI, direct link) and analyze it."""
+    try:
+        pdf_bytes = await pdf_fetcher.fetch_pdf(body.url)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Download failed: {exc}") from exc
+
+    if len(pdf_bytes) > 100 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Downloaded file too large (max 100 MB).")
+
+    try:
+        return await _process_pdf(pdf_bytes, body.force)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Paper analysis failed: {exc}") from exc

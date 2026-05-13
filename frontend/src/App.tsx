@@ -7,7 +7,7 @@ import { ChatPanel } from "./components/ChatPanel";
 import { RecentSessions, DuplicateBanner } from "./components/RecentSessions";
 import { RelatedPapers } from "./components/RelatedPapers";
 import { LiteratureMap } from "./components/LiteratureMap";
-import { uploadPaper, fetchPresets, fetchSessions, resumeSession, deleteSession, generateIllustration } from "./hooks/useApi";
+import { uploadPaper, fetchPresets, fetchSessions, resumeSession, deleteSession, generateIllustration, fetchAndAnalyzePaper } from "./hooks/useApi";
 import { PaperSummary, Preset, IllustrationResult, AspectRatio, Resolution, SessionMeta } from "./types";
 import "./App.css";
 
@@ -25,6 +25,7 @@ export default function App() {
   const [duplicates, setDuplicates] = useState<SessionMeta[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showLitMap, setShowLitMap] = useState(false);
+  const [fetchDuplicates, setFetchDuplicates] = useState<{ resp: import("./types").UploadResponse; url: string } | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchPresets().then(setPresets).catch(() => {}); }, []);
@@ -77,6 +78,21 @@ export default function App() {
     if (pendingFile) await handleUpload(pendingFile, true);
   }
 
+  async function handleFetchPaper(url: string, force = false) {
+    try {
+      const resp = await fetchAndAnalyzePaper(url, force);
+      if (!resp.is_new_session && resp.duplicate_sessions.length > 0) {
+        setFetchDuplicates({ resp, url });
+      } else {
+        openSession(resp.session_id, resp.summary);
+        setRecentSessions(await fetchSessions());
+        setShowLitMap(false);
+      }
+    } catch (err) {
+      setError(String(err));
+    }
+  }
+
   function paperContext(): string {
     if (!summary) return "";
     const points = summary.key_points.join("; ");
@@ -124,7 +140,27 @@ export default function App() {
         <LiteratureMap
           onClose={() => setShowLitMap(false)}
           onOpenSession={(sid) => { setShowLitMap(false); handleResume(sid); }}
+          onFetchPaper={(url) => handleFetchPaper(url)}
         />
+      )}
+
+      {fetchDuplicates && (
+        <div className="fetch-dup-overlay">
+          <div className="fetch-dup-box">
+            <p>This paper was already analyzed.</p>
+            <div className="duplicate-actions">
+              {fetchDuplicates.resp.duplicate_sessions.map((s) => (
+                <button key={s.session_id} className="btn-primary" onClick={() => { handleResume(s.session_id); setFetchDuplicates(null); }}>
+                  Open {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </button>
+              ))}
+              <button className="btn-ghost" onClick={() => { setFetchDuplicates(null); handleFetchPaper(fetchDuplicates.url, true); }}>
+                Start fresh
+              </button>
+              <button className="btn-ghost" onClick={() => setFetchDuplicates(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
 
       <main className="app-main">
@@ -156,7 +192,13 @@ export default function App() {
             <div className="content-grid">
               <div className="main-column">
                 <PaperSummaryPanel summary={summary} />
-                {sessionId && <RelatedPapers sessionId={sessionId} onOpenSession={handleResume} />}
+                {sessionId && (
+                  <RelatedPapers
+                    sessionId={sessionId}
+                    onOpenSession={handleResume}
+                    onDuplicates={(resp, url) => setFetchDuplicates({ resp, url })}
+                  />
+                )}
                 {sessionId && (
                   <ChatPanel
                     sessionId={sessionId}
