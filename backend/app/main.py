@@ -11,7 +11,7 @@ app = FastAPI(title="Paper Assistant API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:15173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

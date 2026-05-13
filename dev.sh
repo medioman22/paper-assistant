@@ -9,8 +9,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Free ports if already in use
-lsof -ti:8000 | xargs kill -9 2>/dev/null || true
-lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+lsof -ti:18000 | xargs kill -9 2>/dev/null || true
+lsof -ti:15173 | xargs kill -9 2>/dev/null || true
 
 echo "Starting backend…"
 cd "$ROOT/backend"
