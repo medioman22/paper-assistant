@@ -27,18 +27,8 @@ Rules:
 - Provide a real URL (arXiv, DOI, Semantic Scholar, ACM DL, IEEE Xplore — whichever is most stable).
 - Keep takeaway to one sentence explaining relevance to the paper above.
 
-Return ONLY a valid JSON array, no markdown:
-[
-  {
-    "title": "exact paper title",
-    "authors": "First Author et al.",
-    "year": 2020,
-    "venue": "NeurIPS / Nature / arXiv / ...",
-    "relationship": "cited | foundational | parallel | subsequent",
-    "takeaway": "one sentence on why this is relevant",
-    "url": "https://..."
-  }
-]
+Return ONLY a valid JSON array, no markdown. Each element must have these keys:
+  title, authors, year, venue, relationship, takeaway, url
 
 --- PAPER ---
 Title: {title}
@@ -86,10 +76,12 @@ def parse_recommendations(raw: str) -> list[dict]:
 async def get_recommendations(title: str, abstract: str, key_points: list[str],
                               methodology: str, findings: str) -> list[dict]:
     client = _get_client()
-    prompt = PROMPT.format(
-        title=title, abstract=abstract,
-        key_points="; ".join(key_points),
-        methodology=methodology, findings=findings,
+    prompt = (PROMPT
+        .replace("{title}", title)
+        .replace("{abstract}", abstract)
+        .replace("{key_points}", "; ".join(key_points))
+        .replace("{methodology}", methodology)
+        .replace("{findings}", findings)
     )
     response = await client.aio.models.generate_content(
         model="gemini-2.0-flash",
