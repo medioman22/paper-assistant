@@ -49,6 +49,40 @@ Findings: {findings}
 """
 
 
+def parse_recommendations(raw: str) -> list[dict]:
+    """Extract a list of recommendation dicts from a raw Gemini response.
+
+    Handles: markdown fences, preamble text, bare arrays, and
+    wrapped objects like {"recommendations": [...]}.
+    """
+    # Strip markdown code fences (``` or ```json)
+    text = re.sub(r"```(?:json)?\s*", "", raw).strip()
+
+    # Try bare array first
+    start = text.find("[")
+    if start != -1:
+        try:
+            result, _ = json.JSONDecoder().raw_decode(text, start)
+            if isinstance(result, list):
+                return result
+        except json.JSONDecodeError:
+            pass
+
+    # Try wrapped object {"recommendations": [...]} or any top-level object
+    start = text.find("{")
+    if start != -1:
+        try:
+            obj, _ = json.JSONDecoder().raw_decode(text, start)
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    if isinstance(v, list):
+                        return v
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError(f"Could not extract recommendation list from response: {text[:300]}")
+
+
 async def get_recommendations(title: str, abstract: str, key_points: list[str],
                               methodology: str, findings: str) -> list[dict]:
     client = _get_client()
@@ -62,13 +96,4 @@ async def get_recommendations(title: str, abstract: str, key_points: list[str],
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0.2),
     )
-    raw = response.text.strip()
-    raw = re.sub(r"```(?:json)?\s*", "", raw).strip()
-    start = raw.find("[")
-    if start == -1:
-        raise ValueError(f"No JSON array in response: {raw[:300]}")
-    try:
-        result, _ = json.JSONDecoder().raw_decode(raw, start)
-        return result
-    except json.JSONDecodeError as e:
-        raise ValueError(f"JSON parse failed: {e} — raw excerpt: {raw[start:start+300]}")
+    return parse_recommendations(response.text)
