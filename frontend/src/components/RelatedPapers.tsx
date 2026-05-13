@@ -19,7 +19,7 @@ interface Props {
 export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props) {
   const [recs, setRecs] = useState<PaperRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [fetchingUrl, setFetchingUrl] = useState<string | null>(null);
+  const [fetchingUrls, setFetchingUrls] = useState<Set<string>>(new Set());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState(false);
 
@@ -44,7 +44,7 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
   }
 
   async function handleFetch(url: string, force = false, title?: string) {
-    setFetchingUrl(url);
+    setFetchingUrls((prev) => new Set(prev).add(url));
     setErrors((e) => ({ ...e, [url]: "" }));
     try {
       const resp = await fetchAndAnalyzePaper(url, force, title);
@@ -56,7 +56,7 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
     } catch (e) {
       setErrors((prev) => ({ ...prev, [url]: String(e) }));
     } finally {
-      setFetchingUrl(null);
+      setFetchingUrls((prev) => { const s = new Set(prev); s.delete(url); return s; });
     }
   }
 
@@ -64,7 +64,7 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
     <div className="related-papers">
       <div className="related-header">
         <h3>Related Papers</h3>
-        <button className="btn-ghost small" onClick={handleGenerate} disabled={loading || fetchingUrl !== null}>
+        <button className="btn-ghost small" onClick={handleGenerate} disabled={loading}>
           {loading ? "Finding…" : recs.length > 0 ? "↺ Refresh" : "Find related papers"}
         </button>
       </div>
@@ -96,10 +96,10 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
                 : r.url && (
                   <button
                     className="btn-ghost small fetch-btn"
-                    disabled={fetchingUrl !== null}
+                    disabled={fetchingUrls.has(r.url)}
                     onClick={() => handleFetch(r.url, false, r.title)}
                   >
-                    {fetchingUrl === r.url ? "Downloading…" : "⬇ Fetch & Analyze"}
+                    {fetchingUrls.has(r.url) ? "Downloading…" : "⬇ Fetch & Analyze"}
                   </button>
                 )}
             </div>
