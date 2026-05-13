@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from google import genai
 from google.genai import types
@@ -62,8 +63,12 @@ async def get_recommendations(title: str, abstract: str, key_points: list[str],
         config=types.GenerateContentConfig(temperature=0.2),
     )
     raw = response.text.strip()
+    raw = re.sub(r"```(?:json)?\s*", "", raw).strip()
     start = raw.find("[")
-    end = raw.rfind("]") + 1
-    if start == -1 or end == 0:
-        raise ValueError(f"No JSON array in response: {raw[:200]}")
-    return json.loads(raw[start:end])
+    if start == -1:
+        raise ValueError(f"No JSON array in response: {raw[:300]}")
+    try:
+        result, _ = json.JSONDecoder().raw_decode(raw, start)
+        return result
+    except json.JSONDecodeError as e:
+        raise ValueError(f"JSON parse failed: {e} — raw excerpt: {raw[start:start+300]}")
