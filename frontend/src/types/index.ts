@@ -102,6 +102,7 @@ export interface GraphNode {
   authors?: string;
   year?: string;
   venue?: string;
+  abstract?: string;
   takeaway?: string;
   url?: string;
   session_id?: string | null;

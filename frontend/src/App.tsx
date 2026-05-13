@@ -25,6 +25,7 @@ export default function App() {
   const [duplicates, setDuplicates] = useState<SessionMeta[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showLitMap, setShowLitMap] = useState(false);
+  const [litMapRevision, setLitMapRevision] = useState(0);
   const [fetchDuplicates, setFetchDuplicates] = useState<{ resp: import("./types").UploadResponse; url: string; title?: string } | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -138,6 +139,7 @@ export default function App() {
 
       {showLitMap && (
         <LiteratureMap
+          revision={litMapRevision}
           onClose={() => setShowLitMap(false)}
           onOpenSession={(sid) => { setShowLitMap(false); handleResume(sid); }}
           onFetchPaper={(url, title) => handleFetchPaper(url, false, title)}
@@ -196,7 +198,8 @@ export default function App() {
                   <RelatedPapers
                     sessionId={sessionId}
                     onOpenSession={handleResume}
-                    onDuplicates={(resp, url, title) => setFetchDuplicates({ resp, url, title })}
+                    onRecommendationsGenerated={() => setLitMapRevision(v => v + 1)}
+                  onDuplicates={(resp, url, title) => setFetchDuplicates({ resp, url, title })}
                   />
                 )}
                 {sessionId && (

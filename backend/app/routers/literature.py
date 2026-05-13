@@ -26,7 +26,8 @@ async def generate_recommendations(session_id: str):
     literature_graph.upsert_local_paper(
         session_id=session_id,
         title=s["title"],
-        takeaway=s.get("findings", s.get("abstract", "")),
+        abstract=s.get("abstract", ""),
+        takeaway=s.get("findings", ""),
     )
 
     try:

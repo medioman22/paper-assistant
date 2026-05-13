@@ -932,23 +932,40 @@ body {
 /* ── React Flow node styles ────────────────────────────────────────────────── */
 .flow-node {
   background: var(--surface2);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 10px;
-  padding: 0.75rem 1rem;
-  width: 260px;
+  padding: 0.6rem 0.85rem;
+  width: 200px;
   font-size: 0.82rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.2rem;
+  position: relative;
+  cursor: default;
+  transition: border-color 0.15s;
 }
-.flow-node-local { border-color: var(--accent); }
-.flow-node-title { font-weight: 600; font-size: 0.85rem; color: var(--text); line-height: 1.3; }
-.flow-node-meta { font-size: 0.72rem; color: var(--text-muted); }
-.flow-node-takeaway { font-size: 0.76rem; color: var(--text-muted); font-style: italic; line-height: 1.35; }
-.flow-node-actions { margin-top: 0.35rem; }
+.flow-node:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
+.flow-node-title {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.flow-node-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+.flow-node-sep { opacity: 0.4; }
+.flow-node-actions { margin-top: 0.3rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .flow-node-btn {
-  font-size: 0.75rem;
-  color: var(--accent);
+  font-size: 0.72rem;
   background: none;
   border: none;
   cursor: pointer;
@@ -956,6 +973,23 @@ body {
   text-decoration: none;
 }
 .flow-node-btn:hover { text-decoration: underline; }
+.flow-node-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  background: #1e1e32;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
 
 /* ── Fetch duplicate overlay ───────────────────────────────────────────────── */
 .fetch-dup-overlay {

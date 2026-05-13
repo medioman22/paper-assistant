@@ -11,7 +11,7 @@ _DATA_DIR = Path(__file__).parent.parent / "data"
 _GRAPH_FILE = _DATA_DIR / "literature_graph.json"
 _DATA_DIR.mkdir(exist_ok=True)
 
-# {node_id: {id, title, authors, year, venue, takeaway, url, session_id|None}}
+# {node_id: {id, title, authors, year, venue, abstract, takeaway, url, session_id|None}}
 _nodes: dict[str, dict] = {}
 # [{id, source, target, relationship}]
 _edges: list[dict] = []
@@ -37,19 +37,39 @@ def _paper_id(title: str, authors: str = "", year: str = "") -> str:
     return hashlib.sha256(key.encode()).hexdigest()[:12]
 
 
-def upsert_local_paper(session_id: str, title: str, takeaway: str) -> str:
+def _two_sentences(text: str) -> str:
+    """Return at most the first two sentences of text."""
+    if not text:
+        return ""
+    parts = []
+    for sep in (".", "!", "?"):
+        text = text.replace(sep + " ", sep + "\n")
+    sentences = [s.strip().rstrip("\n") for s in text.replace("\n", " ").split("\n") if s.strip()]
+    for s in sentences[:2]:
+        parts.append(s if s.endswith((".", "!", "?")) else s + ".")
+    return " ".join(parts)
+
+
+def upsert_local_paper(session_id: str, title: str, abstract: str = "", takeaway: str = "") -> str:
     """Add or refresh a local (uploaded) paper node. Returns node_id."""
-    node_id = session_id
-    existing = _nodes.get(node_id, {})
-    _nodes[node_id] = {**existing, "id": node_id, "title": title, "takeaway": takeaway, "session_id": session_id}
+    existing = _nodes.get(session_id, {})
+    _nodes[session_id] = {
+        **existing,
+        "id": session_id,
+        "title": title,
+        "abstract": _two_sentences(abstract),
+        "takeaway": takeaway,
+        "session_id": session_id,
+    }
     _save()
-    return node_id
+    return session_id
 
 
-def upsert_external_paper(title: str, authors: str, year: str, venue: str, takeaway: str, url: str) -> str:
+def upsert_external_paper(title: str, authors: str, year: str, venue: str,
+                           takeaway: str, url: str) -> str:
     """Add or refresh an external (recommended) paper node. Returns node_id."""
     node_id = _paper_id(title, authors, str(year))
-    # If a local session with this title already exists, prefer its node
+    # Prefer an existing local session with the same title
     for n in _nodes.values():
         if n.get("session_id") and n.get("title", "").lower().strip() == title.lower().strip():
             return n["id"]
@@ -61,6 +81,7 @@ def upsert_external_paper(title: str, authors: str, year: str, venue: str, takea
         "authors": authors,
         "year": str(year),
         "venue": venue,
+        "abstract": existing.get("abstract", ""),
         "takeaway": takeaway,
         "url": url,
         "session_id": existing.get("session_id"),
@@ -80,9 +101,14 @@ def add_edge(source: str, target: str, relationship: str) -> None:
 
 
 def get_recommendations_for(session_id: str) -> list[dict]:
-    """Return external nodes that have an edge from this session."""
-    targets = {e["target"] for e in _edges if e["source"] == session_id}
-    return [_nodes[t] for t in targets if t in _nodes]
+    """Return external nodes linked from this session, with their relationship included."""
+    result = []
+    for e in _edges:
+        if e["source"] == session_id and e["target"] in _nodes:
+            node = dict(_nodes[e["target"]])
+            node["relationship"] = e["relationship"]
+            result.append(node)
+    return result
 
 
 def get_graph() -> dict:

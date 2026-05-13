@@ -14,9 +14,10 @@ interface Props {
   sessionId: string;
   onOpenSession: (sessionId: string) => void;
   onDuplicates: (resp: UploadResponse, url: string, title?: string) => void;
+  onRecommendationsGenerated?: () => void;
 }
 
-export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props) {
+export function RelatedPapers({ sessionId, onOpenSession, onDuplicates, onRecommendationsGenerated }: Props) {
   const [recs, setRecs] = useState<PaperRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingUrls, setFetchingUrls] = useState<Set<string>>(new Set());
@@ -36,6 +37,7 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
     try {
       const r = await generateRecommendations(sessionId);
       setRecs(r.recommendations);
+      onRecommendationsGenerated?.();
     } catch (e) {
       setErrors({ _global: String(e) });
     } finally {
