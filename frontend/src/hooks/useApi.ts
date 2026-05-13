@@ -131,11 +131,11 @@ export async function generateRecommendations(sessionId: string): Promise<{ reco
   return res.json();
 }
 
-export async function fetchAndAnalyzePaper(url: string, force = false): Promise<UploadResponse> {
+export async function fetchAndAnalyzePaper(url: string, force = false, title?: string): Promise<UploadResponse> {
   const res = await fetch(`${BASE}/papers/fetch`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, force }),
+    body: JSON.stringify({ url, force, title }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));

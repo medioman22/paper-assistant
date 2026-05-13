@@ -13,7 +13,7 @@ const REL_LABELS: Record<RelationshipType, string> = {
 interface Props {
   sessionId: string;
   onOpenSession: (sessionId: string) => void;
-  onDuplicates: (resp: UploadResponse, url: string) => void;
+  onDuplicates: (resp: UploadResponse, url: string, title?: string) => void;
 }
 
 export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props) {
@@ -43,13 +43,13 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
     }
   }
 
-  async function handleFetch(url: string, force = false) {
+  async function handleFetch(url: string, force = false, title?: string) {
     setFetchingUrl(url);
     setErrors((e) => ({ ...e, [url]: "" }));
     try {
-      const resp = await fetchAndAnalyzePaper(url, force);
+      const resp = await fetchAndAnalyzePaper(url, force, title);
       if (!resp.is_new_session && resp.duplicate_sessions.length > 0) {
-        onDuplicates(resp, url);
+        onDuplicates(resp, url, title);
       } else {
         onOpenSession(resp.session_id);
       }
@@ -97,7 +97,7 @@ export function RelatedPapers({ sessionId, onOpenSession, onDuplicates }: Props)
                   <button
                     className="btn-ghost small fetch-btn"
                     disabled={fetchingUrl !== null}
-                    onClick={() => handleFetch(r.url)}
+                    onClick={() => handleFetch(r.url, false, r.title)}
                   >
                     {fetchingUrl === r.url ? "Downloading…" : "⬇ Fetch & Analyze"}
                   </button>

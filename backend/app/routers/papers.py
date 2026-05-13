@@ -67,6 +67,7 @@ async def upload_paper(file: UploadFile = File(...), force: bool = Form(False)):
 class FetchRequest(BaseModel):
     url: str
     force: bool = False
+    title: str | None = None
 
 
 async def _process_pdf(pdf_bytes: bytes, force: bool) -> UploadResponse:
@@ -94,7 +95,7 @@ async def _process_pdf(pdf_bytes: bytes, force: bool) -> UploadResponse:
 async def fetch_paper(body: FetchRequest):
     """Download a PDF from a URL (arXiv, DOI, direct link) and analyze it."""
     try:
-        pdf_bytes = await pdf_fetcher.fetch_pdf(body.url)
+        pdf_bytes = await pdf_fetcher.fetch_pdf(body.url, title=body.title)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except Exception as exc:

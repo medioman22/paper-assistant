@@ -45,7 +45,7 @@ function PaperNodeComponent({ data }: NodeProps) {
 
 const nodeTypes = { paper: PaperNodeComponent };
 
-function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => void, onFetchPaper: (url: string) => void): { nodes: Node[]; edges: Edge[] } {
+function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => void, onFetchPaper: (url: string, title?: string) => void): { nodes: Node[]; edges: Edge[] } {
   const HGAP = 340;
   const VGAP = 240;
   const localNodes = graphData.nodes.filter((n) => n.session_id);
@@ -74,7 +74,7 @@ function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => 
     data: {
       ...n,
       onOpen: n.session_id ? () => onOpenSession(n.session_id!) : undefined,
-      onFetch: !n.session_id && n.url ? () => onFetchPaper(n.url!) : undefined,
+      onFetch: !n.session_id && n.url ? () => onFetchPaper(n.url!, n.title) : undefined,
     },
   }));
 
@@ -94,7 +94,7 @@ function buildLayout(graphData: LiteratureGraph, onOpenSession: (id: string) => 
 interface Props {
   onClose: () => void;
   onOpenSession: (sessionId: string) => void;
-  onFetchPaper: (url: string) => void;
+  onFetchPaper: (url: string, title?: string) => void;
 }
 
 export function LiteratureMap({ onClose, onOpenSession, onFetchPaper }: Props) {

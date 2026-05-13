@@ -25,7 +25,7 @@ export default function App() {
   const [duplicates, setDuplicates] = useState<SessionMeta[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showLitMap, setShowLitMap] = useState(false);
-  const [fetchDuplicates, setFetchDuplicates] = useState<{ resp: import("./types").UploadResponse; url: string } | null>(null);
+  const [fetchDuplicates, setFetchDuplicates] = useState<{ resp: import("./types").UploadResponse; url: string; title?: string } | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchPresets().then(setPresets).catch(() => {}); }, []);
@@ -78,11 +78,11 @@ export default function App() {
     if (pendingFile) await handleUpload(pendingFile, true);
   }
 
-  async function handleFetchPaper(url: string, force = false) {
+  async function handleFetchPaper(url: string, force = false, title?: string) {
     try {
-      const resp = await fetchAndAnalyzePaper(url, force);
+      const resp = await fetchAndAnalyzePaper(url, force, title);
       if (!resp.is_new_session && resp.duplicate_sessions.length > 0) {
-        setFetchDuplicates({ resp, url });
+        setFetchDuplicates({ resp, url, title });
       } else {
         openSession(resp.session_id, resp.summary);
         setRecentSessions(await fetchSessions());
@@ -140,7 +140,7 @@ export default function App() {
         <LiteratureMap
           onClose={() => setShowLitMap(false)}
           onOpenSession={(sid) => { setShowLitMap(false); handleResume(sid); }}
-          onFetchPaper={(url) => handleFetchPaper(url)}
+          onFetchPaper={(url, title) => handleFetchPaper(url, false, title)}
         />
       )}
 
@@ -154,7 +154,7 @@ export default function App() {
                   Open {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                 </button>
               ))}
-              <button className="btn-ghost" onClick={() => { setFetchDuplicates(null); handleFetchPaper(fetchDuplicates.url, true); }}>
+              <button className="btn-ghost" onClick={() => { setFetchDuplicates(null); handleFetchPaper(fetchDuplicates.url, true, fetchDuplicates.title); }}>
                 Start fresh
               </button>
               <button className="btn-ghost" onClick={() => setFetchDuplicates(null)}>Cancel</button>
@@ -196,7 +196,7 @@ export default function App() {
                   <RelatedPapers
                     sessionId={sessionId}
                     onOpenSession={handleResume}
-                    onDuplicates={(resp, url) => setFetchDuplicates({ resp, url })}
+                    onDuplicates={(resp, url, title) => setFetchDuplicates({ resp, url, title })}
                   />
                 )}
                 {sessionId && (
