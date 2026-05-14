@@ -119,3 +119,14 @@ export interface LiteratureGraph {
   nodes: GraphNode[];
   edges: GraphEdge[];
 }
+
+export interface PaperSearchResult {
+  title: string;
+  authors: string;
+  year: number | null;
+  venue: string;
+  abstract: string;
+  url: string | null;
+  relevance: string;
+  semantic_scholar_id: string | null;
+}

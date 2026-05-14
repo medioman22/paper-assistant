@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from ..services import session_store, literature_graph, recommendations_service
+from pydantic import BaseModel
+from ..services import session_store, literature_graph, recommendations_service, search_service
 
 router = APIRouter(prefix="/literature", tags=["literature"])
 
@@ -55,3 +56,18 @@ async def generate_recommendations(session_id: str):
         result.append({**r, "node_id": node_id})
 
     return {"recommendations": result, "cached": False}
+
+
+class SearchRequest(BaseModel):
+    query: str
+
+
+@router.post("/search")
+async def search_papers(body: SearchRequest):
+    if not body.query.strip():
+        raise HTTPException(status_code=400, detail="Query is required")
+    try:
+        results = await search_service.search_papers(body.query.strip())
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Search failed: {exc}") from exc
+    return {"results": results}

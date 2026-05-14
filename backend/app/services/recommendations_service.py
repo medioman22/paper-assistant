@@ -27,6 +27,7 @@ Rules:
 - Use Google Search to verify each paper exists and find its real URL (prefer arXiv, DOI, or publisher page).
 - If you cannot confirm a paper exists via search, skip it and suggest a different one you can verify.
 - Keep takeaway to one sentence explaining relevance to the paper above.
+- relationship must be exactly one of: cited, foundational, parallel, subsequent, related
 
 Return ONLY a valid JSON array, no markdown. Each element must have these keys:
   title, authors, year, relationship, takeaway, url

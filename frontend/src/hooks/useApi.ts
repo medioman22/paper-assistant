@@ -131,6 +131,19 @@ export async function generateRecommendations(sessionId: string): Promise<{ reco
   return res.json();
 }
 
+export async function searchPapers(query: string): Promise<{ results: import("../types").PaperSearchResult[] }> {
+  const res = await fetch(`${BASE}/literature/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Search failed");
+  }
+  return res.json();
+}
+
 export async function fetchAndAnalyzePaper(url: string, force = false, title?: string): Promise<UploadResponse> {
   const res = await fetch(`${BASE}/papers/fetch`, {
     method: "POST",

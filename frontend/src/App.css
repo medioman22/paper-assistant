@@ -846,6 +846,55 @@ body {
 .app-header { display: flex; align-items: center; gap: 1rem; }
 
 /* ── Related Papers ────────────────────────────────────────────────────────── */
+/* ── Paper Search ─────────────────────────────────────────────────────────── */
+.paper-search {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.paper-search-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+.paper-search-header h3 { font-size: 1rem; font-weight: 600; margin: 0; }
+.paper-search-badge {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+}
+.paper-search-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.paper-search-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  outline: none;
+}
+.paper-search-input:focus { border-color: var(--accent); }
+.paper-search-abstract {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0.2rem 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .related-papers {
   background: var(--surface);
   border: 1px solid var(--border);

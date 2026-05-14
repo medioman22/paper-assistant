@@ -7,6 +7,7 @@ import { ChatPanel } from "./components/ChatPanel";
 import { RecentSessions, DuplicateBanner } from "./components/RecentSessions";
 import { RelatedPapers } from "./components/RelatedPapers";
 import { LiteratureMap } from "./components/LiteratureMap";
+import { PaperSearch } from "./components/PaperSearch";
 import { uploadPaper, fetchPresets, fetchSessions, resumeSession, deleteSession, generateIllustration, fetchAndAnalyzePaper } from "./hooks/useApi";
 import { PaperSummary, Preset, IllustrationResult, AspectRatio, Resolution, SessionMeta } from "./types";
 import "./App.css";
@@ -202,6 +203,10 @@ export default function App() {
                   onDuplicates={(resp, url, title) => setFetchDuplicates({ resp, url, title })}
                   />
                 )}
+                <PaperSearch
+                  onOpenSession={handleResume}
+                  onDuplicates={(resp, url, title) => setFetchDuplicates({ resp, url, title })}
+                />
                 {sessionId && (
                   <ChatPanel
                     sessionId={sessionId}
